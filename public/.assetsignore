@@ -1,0 +1,14 @@
+# Defense in depth: never publish private configuration or source artifacts.
+**/.env*
+**/.dev.vars*
+**/.git/**
+**/.secrets/**
+**/.wrangler/**
+**/*.map
+**/*.sql
+**/*.sqlite*
+**/*.db
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
