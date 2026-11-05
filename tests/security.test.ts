@@ -14,6 +14,25 @@ const safeEnv = () => ({
   ASSETS: { fetch: async () => new Response('asset') },
 } as unknown as Env)
 
+test('private configuration, source and map probes fail before any binding or SPA fallback runs', async () => {
+  const blocked = new Proxy({}, { get() { throw new Error('Private paths must not reach bindings') } }) as Env
+  for (const path of ['/.env', '/.env.production', '/.dev.vars', '/.git/config', '/.secrets/setup.json', '/%2eenv', '/worker/index.ts', '/migrations/0001.sql', '/assets/app.js.map', '/package-lock.json', '/wrangler.jsonc']) {
+    const response = await worker.fetch(new Request('https://shop.example.invalid' + path), blocked)
+    assert.equal(response.status, 404, path)
+    assert.equal(response.headers.get('Cache-Control'), 'no-store')
+    assert.equal(response.headers.get('Set-Cookie'), null)
+    assert.equal(await response.text(), 'Not found')
+  }
+})
+
+test('private-file guards preserve storefront, partner links, public licenses and well-known routes', async () => {
+  for (const path of ['/', '/admin', '/join', '/s/ABCD1234', '/brands/README.md', '/.well-known/security.txt', '/assets/index-test.js']) {
+    const response = await worker.fetch(new Request('https://shop.example.invalid' + path), safeEnv())
+    assert.equal(response.status, 200, path)
+    assert.equal(await response.text(), 'asset')
+  }
+})
+
 test('plaintext API writes cannot reach login, callbacks, D1 or suppliers; reads redirect with the path and query intact', async () => {
   const blocked = new Proxy({}, { get() { throw new Error('No binding may run for plaintext traffic') } }) as Env
   for (const path of ['/api/admin/login', '/api/orders', '/api/recharge/webhook', '/api/payments/notify/alipay']) {
