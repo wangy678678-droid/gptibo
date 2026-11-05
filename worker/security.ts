@@ -21,3 +21,19 @@ export function requireSecureTransport(request: Request): Response | null {
   url.protocol = 'https:'
   return new Response(null, { status: 308, headers: { Location: url.href } })
 }
+
+/** Keep deployment files and source maps out of the SPA fallback, even if a
+ * future build accidentally copies one into the asset directory. */
+export function rejectPrivatePath(request: Request): Response | null {
+  let path: string
+  try { path = decodeURIComponent(new URL(request.url).pathname).replaceAll('\\', '/').toLowerCase() }
+  catch { path = '/.invalid-path' }
+  const hidden = path.split('/').some(part => part.startsWith('.') && part !== '.well-known')
+  const source = /^\/(?:worker|src|services|migrations|scripts|tests|emails)(?:\/|$)/.test(path)
+  const config = /^\/(?:package(?:-lock)?\.json|wrangler(?:\.[^/]*)?|tsconfig[^/]*|vite\.config\.[^/]*|agents\.md)$/.test(path)
+  if (!hidden && !source && !config && !/\.(?:map|sql|sqlite|db|pem|key|p12|pfx)$/.test(path)) return null
+  return new Response('Not found', { status: 404, headers: {
+    'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store',
+    'Content-Security-Policy': "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+  } })
+}

@@ -13,7 +13,7 @@ import { retryPayoutNotifications } from './payout-notifications.ts'
 import { invoiceNotification, reconcileInvoicePayments } from './invoices.ts'
 import { sendDueRechargeReminders } from './recharge-reminders.ts'
 import { reconcileGmail } from './account_supplier/service.ts'
-import { requireSecureTransport, secureResponse } from './security.ts'
+import { rejectPrivatePath, requireSecureTransport, secureResponse } from './security.ts'
 const json = (value: unknown, status = 200) => Response.json(value, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...(status === 429 ? { 'Retry-After': '60' } : {}) },
 })
@@ -35,7 +35,7 @@ export default {
   },
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
-      const transport = requireSecureTransport(request)
+      const transport = requireSecureTransport(request) ?? rejectPrivatePath(request)
       return secureResponse(request, transport ?? await route(request, env))
     } catch {
       return secureResponse(request, error('服务暂时不可用，请稍后重试。', 503))
