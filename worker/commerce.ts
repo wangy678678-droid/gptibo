@@ -65,6 +65,10 @@ function requiredNote(data: Record<string, unknown>) {
 export async function commerce(request: Request, env: Env): Promise<Response> {
   try {
     const url = new URL(request.url); const path = url.pathname; const method = request.method
+    // The shared frontend queries this before enabling login and checkout.
+    // Turnstile is implemented by the Go backend; this Worker uses its existing
+    // API limits and email/TOTP checks, matching Go's unconfigured response.
+    if (path === '/api/orders/verification' && method === 'GET') return json({ enabled: false })
     const auth = await authRoute(request, env, path)
     if (auth) return auth
     const partnerLogin = await partnerAuth(request, env, path)
