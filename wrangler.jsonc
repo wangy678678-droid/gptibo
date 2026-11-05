@@ -55,7 +55,23 @@
   "assets": {
     "binding": "ASSETS",
     "run_worker_first": [
-      "/api/*"
+      "/api/*",
+      "/.*",
+      "/%*",
+      "/*/.*",
+      "/*.map",
+      "/worker/*",
+      "/src/*",
+      "/services/*",
+      "/migrations/*",
+      "/scripts/*",
+      "/tests/*",
+      "/emails/*",
+      "/package*.json",
+      "/wrangler*",
+      "/tsconfig*",
+      "/vite.config.*",
+      "/AGENTS.md"
     ],
     "directory": "./dist",
     "not_found_handling": "single-page-application"
